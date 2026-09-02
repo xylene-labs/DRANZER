@@ -129,3 +129,17 @@ between operations, so a training step is not GPU-resident.
 ## License
 
 [MIT License](LICENSE). Built for learning, experimentation, and research.
+
+## Multi-agent development
+
+When more than one coding agent works this repository at the same time,
+coordinate through [gator-tools](https://github.com/ShubhendraGautam/gator-tools),
+vendored here as a submodule:
+
+```sh
+node gator-tools/skills/multi-agent-coordination/scripts/coord.mjs
+```
+
+Run `git submodule update --init` if that directory is empty. Coordination state
+lives in this repository's `.git/`, never in the submodule, and nothing the
+project needs at runtime depends on it — a clone without submodules still works.
