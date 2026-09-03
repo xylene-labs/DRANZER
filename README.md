@@ -1,8 +1,8 @@
 # DRANZER
 
-[![CI](https://github.com/ShubhendraGautam/DRANZER/actions/workflows/ci.yml/badge.svg)](https://github.com/ShubhendraGautam/DRANZER/actions/workflows/ci.yml)
-[![Nightly](https://github.com/ShubhendraGautam/DRANZER/actions/workflows/nightly.yml/badge.svg)](https://github.com/ShubhendraGautam/DRANZER/actions/workflows/nightly.yml)
-[![Performance](https://github.com/ShubhendraGautam/DRANZER/actions/workflows/performance.yml/badge.svg)](https://github.com/ShubhendraGautam/DRANZER/actions/workflows/performance.yml)
+[![CI](https://github.com/Scynth-Labs/DRANZER/actions/workflows/ci.yml/badge.svg)](https://github.com/Scynth-Labs/DRANZER/actions/workflows/ci.yml)
+[![Nightly](https://github.com/Scynth-Labs/DRANZER/actions/workflows/nightly.yml/badge.svg)](https://github.com/Scynth-Labs/DRANZER/actions/workflows/nightly.yml)
+[![Performance](https://github.com/Scynth-Labs/DRANZER/actions/workflows/performance.yml/badge.svg)](https://github.com/Scynth-Labs/DRANZER/actions/workflows/performance.yml)
 
 ### A decoder-only transformer, built from scratch in C
 
@@ -37,7 +37,7 @@ Make; see [Supported platforms](docs/platform-support.md) for other CPU, OS, Ope
 support levels.
 
 ```bash
-git clone https://github.com/ShubhendraGautam/DRANZER.git
+git clone https://github.com/Scynth-Labs/DRANZER.git
 cd DRANZER/src
 make
 
