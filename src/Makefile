@@ -46,6 +46,12 @@ AR = ar
 CFLAGS = -I include/ -I ../libs/include/ -O3 -ffast-math -MMD -MP
 LDFLAGS = -lm
 
+# Ordinary shared-library builds reject every unresolved symbol. Sanitizer
+# runtimes are the exception: Clang deliberately links them into the final
+# executable rather than an instrumented DSO, so -z defs would reject the
+# __asan_* / __ubsan_* references that the executable is meant to satisfy.
+PUBLIC_SHARED_DEFS_FLAG = -Wl,-z,defs
+
 # Tune for the exact CPU you're building on: make NATIVE=1
 # Fastest option, but the resulting binary is NOT portable to other machines.
 ifdef NATIVE
@@ -69,6 +75,7 @@ endif
 # Enable AddressSanitizer with: make ASAN=1
 ifdef ASAN
     CFLAGS += -fsanitize=address -fno-omit-frame-pointer -O1 -g
+    PUBLIC_SHARED_DEFS_FLAG :=
     $(info AddressSanitizer enabled)
 endif
 
@@ -89,6 +96,7 @@ ifdef UBSAN
     CFLAGS += -fsanitize=undefined -fno-sanitize=float-divide-by-zero \
               -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g
     LDFLAGS += -fsanitize=undefined
+    PUBLIC_SHARED_DEFS_FLAG :=
     $(info UndefinedBehaviorSanitizer enabled (UBSAN=1))
 endif
 
@@ -203,7 +211,7 @@ $(PUBLIC_STATIC): $(PUBLIC_ALL_OBJ)
 $(PUBLIC_SHARED): $(PUBLIC_ALL_OBJ) $(PUBLIC_VERSION_SCRIPT)
 	$(CC) -shared $(PUBLIC_ALL_OBJ) $(CFLAGS) $(LDFLAGS) -ldl \
 		-Wl,--version-script=$(PUBLIC_VERSION_SCRIPT) \
-		-Wl,-soname,$(PUBLIC_SHARED) -Wl,-z,defs -o $@
+		-Wl,-soname,$(PUBLIC_SHARED) $(PUBLIC_SHARED_DEFS_FLAG) -o $@
 
 # Every public-library source, including the tokenizer implementation normally
 # owned by ../libs, is compiled as PIC into the isolated public build tree.

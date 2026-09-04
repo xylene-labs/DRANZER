@@ -62,11 +62,11 @@ static void quantize_group(const float *src, float *dst, size_t count,
         if (magnitude > peak) peak = magnitude;
     }
 
-    /* An all-zero group has no scale to derive. Reconstructing it as zeros is
-     * both exact and what any scale would have produced, so it is copied
-     * through rather than given an invented one. */
+    /* An all-zero group has no scale to derive. The packed representation has
+     * one zero code and reconstructs it as positive zero, so canonicalize the
+     * accuracy-only path the same way instead of preserving a -0.0 sign bit. */
     if (!(peak > 0.0f)) {
-        for (size_t i = 0; i < count; i++) dst[i * stride] = src[i * stride];
+        for (size_t i = 0; i < count; i++) dst[i * stride] = 0.0f;
         if (level_seen && level_seen_size > 0) level_seen[qmax] = 1; /* the zero level */
         return;
     }
@@ -96,7 +96,11 @@ static void quantize_group(const float *src, float *dst, size_t count,
             if (slot < level_seen_size) level_seen[slot] = 1;
         }
 
-        float reconstructed = scale * level;
+        /* ceilf() preserves the sign of a zero rounded from a small negative
+         * value. Packed storage cannot encode that otherwise-irrelevant sign:
+         * its integer level zero unpacks as +0.0. Keep both quantization paths
+         * bit-identical so a saved bundle reconstructs the promised grid. */
+        float reconstructed = index == 0 ? 0.0f : scale * level;
         dst[i * stride] = reconstructed;
 
         double difference = (double)original - (double)reconstructed;

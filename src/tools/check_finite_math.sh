@@ -32,20 +32,54 @@ cd "$(dirname "$0")/.."
 
 STRIPPER=${CC:-cc}
 
+# GCC's -fpreprocessed strips comments without expanding includes or macros,
+# but Clang does not implement it. Clang's raw lexer provides the identifiers
+# directly without processing includes or conditional directives. Probe once
+# instead of guessing from the compiler name, and fail closed if neither mode
+# works.
+if "$STRIPPER" -x c -fpreprocessed -dD -E /dev/null >/dev/null 2>&1; then
+    STRIP_MODE=fpreprocessed
+elif "$STRIPPER" -x c -fsyntax-only -Xclang -dump-raw-tokens \
+        /dev/null >/dev/null 2>&1; then
+    STRIP_MODE=raw-tokens
+else
+    echo "finite-math check: $STRIPPER cannot produce a comment-free token stream" >&2
+    exit 2
+fi
+
+strip_comments() {
+    local file=$1
+    if [ "$STRIP_MODE" = fpreprocessed ]; then
+        "$STRIPPER" -x c -fpreprocessed -dD -E "$file"
+    else
+        "$STRIPPER" -x c -fsyntax-only -Xclang -dump-raw-tokens "$file"
+    fi
+}
+
 # Files the Makefile explicitly compiles without -ffast-math.
 exempt=$(sed -n 's/^\([A-Za-z0-9_/.-]*\)\.o:[[:space:]]*CFLAGS.*filter-out -ffast-math.*/\1.c/p' Makefile)
 
 # The library macros whose behaviour -ffinite-math-only changes. NAN and
 # INFINITY are included because naming them is what clang 18 warns about.
-FORBIDDEN='\b(isnan|isinf|isfinite|fpclassify|INFINITY|NAN|HUGE_VAL|HUGE_VALF)\b'
+FORBIDDEN_NAMES='isnan|isinf|isfinite|fpclassify|INFINITY|NAN|HUGE_VAL|HUGE_VALF'
+FORBIDDEN="\\b($FORBIDDEN_NAMES)\\b"
 
 status=0
 checked=0
 while IFS= read -r file; do
     case " $exempt " in *" $file "*) continue ;; esac
     checked=$((checked + 1))
-    hits=$("$STRIPPER" -x c -fpreprocessed -dD -E "$file" 2>/dev/null |
-           grep -nE "$FORBIDDEN" || true)
+    if ! stripped=$(strip_comments "$file" 2>&1); then
+        echo "finite-math check: failed to scan $file with $STRIPPER" >&2
+        echo "$stripped" >&2
+        exit 2
+    fi
+    if [ "$STRIP_MODE" = raw-tokens ]; then
+        hits=$(printf '%s\n' "$stripped" |
+               grep -nE "^raw_identifier '($FORBIDDEN_NAMES)'" || true)
+    else
+        hits=$(printf '%s\n' "$stripped" | grep -nE "$FORBIDDEN" || true)
+    fi
     if [ -n "$hits" ]; then
         echo "$file: depends on IEEE special values but is compiled with -ffast-math:"
         echo "$hits" | sed 's/^/    /'

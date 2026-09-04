@@ -255,6 +255,14 @@ int main(void) {
     printf("SKIP: built with a sanitizer, so these timings would measure "
            "instrumentation rather than the kernels - not a failure.\n");
     return 0;
+#elif defined(_OPENMP)
+    /* These assertions compare the cost of individual single-threaded kernel
+     * implementations.  An OpenMP build adds team startup and scheduling to
+     * the public operations, so the ratios mostly measure that overhead at
+     * this deliberately small shape.  Thread scaling has its own benchmark. */
+    printf("SKIP: built with OpenMP, so these timings would measure parallel "
+           "startup rather than the kernels - not a failure.\n");
+    return 0;
 #else
     printf("cpu: %s\n", cpu_features_summary());
     printf("shape %dx%dx%d, median of %d ABBA-interleaved ratio replicates, "

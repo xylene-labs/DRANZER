@@ -1,4 +1,5 @@
 #include "byte_pair_encoding.h"
+#include "common/fp_bits.h"
 #include "core/bundle.h"
 #include "core/model.h"
 #include <math.h>
@@ -143,7 +144,7 @@ int main(void) {
     float loss = 0.0f;
     model_zero_gradients(&rms);
     if (ok && (model_accumulate_gradients(&rms, tokens, 13, 3, &loss) !=
-                   MODEL_SUCCESS || !isfinite(loss))) ok = 0;
+                   MODEL_SUCCESS || !dranzer_float_is_finite(loss))) ok = 0;
 
     model_free(&ordinary);
     model_free(&rms);

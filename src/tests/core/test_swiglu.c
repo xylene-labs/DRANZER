@@ -1,4 +1,5 @@
 #include "byte_pair_encoding.h"
+#include "common/fp_bits.h"
 #include "core/bundle.h"
 #include "core/model.h"
 #include <math.h>
@@ -84,7 +85,9 @@ static int check_one_gradient(neural_model_t *model, float *parameter,
     *parameter = original;
     model_zero_gradients(model);
     float numerical = (plus - minus) / (2.0f * epsilon);
-    return isfinite(center) && isfinite(analytic) && isfinite(numerical) &&
+    return dranzer_float_is_finite(center) &&
+           dranzer_float_is_finite(analytic) &&
+           dranzer_float_is_finite(numerical) &&
            near(analytic, numerical, 4e-2f + 4e-2f * fabsf(numerical));
 }
 

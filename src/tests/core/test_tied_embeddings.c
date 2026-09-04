@@ -1,4 +1,5 @@
 #include "byte_pair_encoding.h"
+#include "common/fp_bits.h"
 #include "core/bundle.h"
 #include "core/lm_head.h"
 #include "core/model.h"
@@ -122,7 +123,9 @@ static int check_shared_end_to_end_gradient(neural_model_t *model) {
 
     float numerical = (plus_loss - minus_loss) / (2.0f * epsilon);
     float tolerance = 2e-2f + 2e-2f * fabsf(numerical);
-    return isfinite(center_loss) && isfinite(analytic) && isfinite(numerical) &&
+    return dranzer_float_is_finite(center_loss) &&
+           dranzer_float_is_finite(analytic) &&
+           dranzer_float_is_finite(numerical) &&
            near(analytic, numerical, tolerance);
 }
 

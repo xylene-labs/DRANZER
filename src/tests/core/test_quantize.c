@@ -293,10 +293,11 @@ static void check_zero_group(void) {
     if (error.rms_error != 0.0) fail("an all-zero tensor reported error");
 }
 
-/* The storage representation must reconstruct the exact grid used by the
- * accuracy-only path. A 3x5 tensor deliberately leaves tail padding at the
- * widths below, so canonical padding and the unused all-ones code are covered
- * alongside the ordinary round trip. */
+/* The storage representation must reconstruct the exact bit pattern used by
+ * the accuracy-only path. This includes canonical +0.0: a small negative value
+ * rounds to a signed zero through ceilf(), but the packed integer zero has no
+ * sign bit. A 3x5 tensor deliberately leaves tail padding at the widths below,
+ * so canonical padding and the unused all-ones code are covered too. */
 static void check_packed_storage(void) {
     const size_t rows = 3, cols = 5, count = rows * cols;
     float original[count], expected[count], reconstructed[count];
@@ -325,7 +326,7 @@ static void check_packed_storage(void) {
                 quantize_unpack(scales, scale_count, packed, packed_size,
                                 rows, cols, bits, granularities[g],
                                 reconstructed) != 0 ||
-                !reconstructions_agree(expected, reconstructed, count)) {
+                memcmp(expected, reconstructed, sizeof(expected)) != 0) {
                 fail("packed storage changed the quantization grid");
             }
 
